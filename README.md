@@ -668,3 +668,648 @@ Cacheable
 -실제로는 GET, HEAD 정도만 캐시로 사용
  -POST, PACTH는 본문 내용까지 캐시 키로 고려해야 하는데, 구현이 쉽지 않음
 
+#5.HTTP 메서드 활용
+#클라이언트에서 서버로 데이터 전송
+*데이터 전달 방식은 크게 두가지
+-(1)쿼리 파라미터를 통한 데이터 전송
+ -GET
+ -주로 정렬 필터(검색어)
+-(2)메시지 바디를 통한 데이터 전송
+ -POST, PUT, PATCH
+ -회원 가입, 상품 주문, 리소스 등록, 리소스 변경
+
+*4가지 상황 예시
+1.정적 데이터 조회
+ -이미지, 정적 텍스트 문서
+2.동적 데이터 조회
+ -주로 검색, 게시판 목록에서 정렬 필터(검색어)
+3.HTML Form을 통한 데이터 전송
+ -회원 가입, 상품 주문, 데이터 변경
+4.HTTP API를 통한 데이터 전송
+ -회원 가입, 상품 주문, 데이터 변경
+ -서버 to 서버, 앱 클라이언트, 웹 클라이언트(Ajax)
+
+*정적 데이터 조회 정리
+-이미지, 정적 텍스트 문서
+-조회는 GET 사용
+-정적 데이터는 일반적으로 쿼리 파라미터 없이 리소스 경로로 단순하게 조회 가능
+
+*동적 데이터 조회 정리
+-주로 검색, 게시판 목록에서 정렬 필터(검색어)
+-조회 조건을 줄여주는 필터, 조회 결과를 정렬하는 정렬 조건에 주로 사용
+-조회는 GET 사용
+-GET은 쿼리 파라미터 사용해서 데이터를 전달
+
+*HTML Form 데이터 전송 정리
+-HTML Form submit시 POST 전송
+ -예) 회원 가입, 상품 주문, 데이터 변경
+-Content-Type: application/x-www-form-urlencoded 사용
+ -form의 내용을 메시지 바디를 통해서 전송(key=value, 쿼리 파라미터 형식) 
+ -전송 데이터를 url encoding 처리
+ -예) abc김 -> abc%EA%B9%80
+-HTML Form은 GET 전송도 가능
+-Content-Type: multipart/form-data
+ -파일 업로드 같은 바이너리 데이터 전송시 사용
+ -다른 종류의 여러 파일과 폼의 내용 함께 전송 가능(그래서 이름이 multipart) 
+-참고: HTML Form 전송은 GET, POST만 지원 (중요!)
+
+*HTTP API 데이터 전송 정리
+-서버 tO 서버
+ -백엔드 시스템 통신
+-앱 클라이언트
+ -아이폰, 안드로이드
+-웹 클라이언트
+ -HTML에서 Form 전송 대신 자바 스크립트를 통한 통신에 사용(AJAX)  
+-POST, PUT, PATCH: 메시지 바디를 통해 데이터 전송
+-GET: 조회, 쿼리 파라미터로 데이터 전달
+-Content-Type: application/json을 주로 사용(사실상 표준)
+ -TEXT, XML, JSON 등등
+
+#HTTP API 설계 예시
+(1)HTTP API - 컬렉션
+ -POST 기반 등록
+ -예) 회원 관리 API 제공
+(2)HTTP API - 스토어
+ -PUT 기반 등록
+ -예) 정적 컨텐츠 관리, 원격 파일 관리
+(3)HTML FORM 사용
+ -웹 페이지 회원 관리
+ -GET, POST만 지원  
+
+*회원 관리 시스템
+API 설계 - POST 기반 등록
+-회원 목록 /members -> GET 
+-회원 등록 /members -> POST 
+-회원 조회 /members/{id} -> GET 
+-회원 수정 /members/{id} -> PATCH, PUT, POST
+-회원 삭제 /members/{id} -> DELETE 
+
+*회원 관리 시스템
+POST - 신규 자원 등록 특징
+-클라이언트는 등록될 리소스의 URI를 모른다.
+ -회원 등록 /members -> POST
+ -POST /member
+-서버가 새로 등록된 리소스 URI 를 생성해준다
+ -HTTP/1.1 201 Created
+ Location: /members/100
+-컬렉션(Collection)  
+ -서버가 관리하는 리소스 디렉토리
+ -서버가 리소스의 URI를 생성하고 관리
+ -여기서 컬렉션은 /members
+
+*파일 관리 시스템
+API 설계 - PUT 기반 등록 
+-파일 목록 /files -> GET
+-파일 조회 /files/{filename} -> GET
+-파일 등록 /files/{filename} -> PUT
+-파일 삭제 /files/{filename} -> DELETE
+-파일 대량 등록/files -> POST
+
+*파일 관리 시스템
+PUT - 신규 자원 등록 특징
+-클라이언트가 리소스 URI를 알고 있어야 한다.
+ -파일 등록 /files/{filename} -> PUT
+ -PUT files/star.jpg
+-클라이언트가 직접 리소스의 URI를 지정한다.
+-스토어(Store) 
+ -클라이언트가 관리하는 리소스 저장소
+ -클라이언트가 리소스의 URI를 알고 관리
+ -여기서 스토어는 /files
+
+*HTML FORM 사용
+-HTML FORM은 GET, POST만 지원
+-AJAX 같은 기술을 사용해서 해결 가능 -> 회원 API 참고 
+-여기서는 순수 HTML, HTML FORM 이야기
+-GET, POST만 지원하므로 제약이 있음
+
+-회원 목록 /members -> GET
+-회원 등록 폼 /members/new -> GET
+-회원 등록 /members/new, members -> POST
+-회원 조회 /members/{id} -> GET
+-회원 수정 폼 /members/{id}/edit -> GET
+-회원 수정 /members/{id}edit, /members/{id} -> POST
+-회원 삭제 /members/{id}/delete -> POST
+
+-HTML FORM은 GET, POST만 지원
+-컨트롤 URI
+ -GET, POST만 지원하므로 제약이 있음
+ -이런 제약을 해결하기 위해 동사로 된 리소스 경로 사용
+ -POST의 /new, /edit, /delete가 컨트롤 URI
+ -HTTP 메서드로 해결하기 애매한 경우 사용(HTTP API 포함)
+
+*정리
+(1)HTTP API - 컬렉션
+ -POST 기반 등록
+ -서버가 리소스 URI 결정
+
+(2)HTTP API - 스토어
+ -PUT 기반 등록
+ -클라이언트가 리소스 URI 결정
+
+(3)HTML FORM 사용
+ -순수 HTML + HTML FORM 사용
+ -GET, POST만 지원  
+
+*정리
+참고하면 좋은 URI 설계 개념
+*문서(document) 
+ -단일 개념(파일 하나, 객체 인스턴스, 데이터베이스 row)
+ -예) /members/100, /files/star.jpg
+
+*컬렉션(collection) 
+ -서버가 관리하는 리소스 디렉토리
+ -서버가 리소스의 URI를 생성하고 관리
+ -예) /members
+
+*스토어(store) 
+ -클라이언트가 관리하는 자원 저장소
+ -클라이언트가 리소스의 URI를 알고 관리
+ -예) /files
+
+*컨트롤러(controller), 컨트롤 URI
+ -문서, 컬렉션, 스토어로 해결하기 어려운 추가 프로세스 실행
+ -동사를 직접 사용
+ -예) /members/{id}/delete
+
+https://restfulapi.net/resource-naming <- 여기서 참고하면 도움됨!
+
+#6. HTTP 상태코드
+#HTTP 상태코드 소개
+*상태 코드
+-1xx (Informational): 요청이 수신되어 처리중
+-2xx (Successful): 요청 정상 처리
+-3xx (Redirection): 요청을 완료하려면 추가 행동 필요
+-4xx (Client Error): 클라이언트 오류, 잘못된 문법등으로 서버가 요청을 수행할 수 없음
+-5xx (Server Error): 서버 오류, 서버가 정상 요청을 처리하지 못함
+
+*만약 모르는 상태 코드가 나타나면?
+-클라이언트가 인식할 수 없는 상태코드를 서버가 반환하면?
+-클라이언트는 상위 상태코드로 해석해서 처리
+-미래에 새로운 상태 코드가 추가되어도 클라이언트를 변경하지 않아도 됨
+-예) 
+  -299 ??? -> 2xx (Successful)
+  -451 ??? -> 4xx (Client Error)
+  -599 ??? -> 5xx (Server Error)
+
+#1xx (Information)
+요청이 수신되어 처리중
+-거의 사용하지 않으므로 생략
+
+#2xx - 성공
+클라이언트의 요청을 성공적으로 처리
+-200 OK
+-201 Created
+-202 Accepted
+-204 No Content
+
+*200 OK
+요청 성공
+클라이언트 Request -> 서버
+클라이언트 <- 200 OK 서버
+
+*201 Created
+요청 성공해서 새로운 리소스가 생성됨
+-생성된 리소스는 응답의 Location 헤더 필드로 식별 
+-예) Location: /members/100
+
+*202 Accepted
+요청이 접수되었으나 처리가 완료되지 않았음
+-배치 처리 같은 곳에서 사용
+-예) 요청 접수 후 1시간 뒤에 배치 프로세스가 요청을 처리함
+
+
+*204 No Content
+서버가 요청을 성공적으로 수행했지만, 응답 페이로드 본문에 보낼 데이터가 없음
+-예) 웹 문서 편집기에서 save 버튼
+-save 버튼의 결과로 아무 내용이 없어도 된다.
+-save 버튼을 눌러도 같은 화면을 유지해야 한다.
+-결과 내용이 없어도 204 메시지(2xx)만으로 성공을 인식할 수 있다.
+
+
+#3xx - 리다이렉션1
+*3xx (Redirection)
+요청을 완료하기 위해 유저 에이전트의 추가 조치 필요
+-300 Multiple Choices
+-301 Moved Permanently
+-302 Found
+-303 See Other
+-304 Not Modufied
+-307 Temporary Redirect
+-308 Permanent Redirect
+
+*리다이렉션 이해
+-웹 브라우저는 3xx 응답의 결과에 Location 헤더가 있으면, Location 위치로 자동 이동 (리다이렉트)
+
+*리다이렉션 이해 - 자동 리다이렉트 흐름
+1.요청 
+GET /event HTTP/1.1
+Host: localhost:8080
+2.응답
+HTTP/1.1 301 Moved Permanently
+Location: /new-event
+3.자동 리다이렉트
+4.요청
+GET /new-event HTTP/1.1
+Host: localhost:8080
+5.응답
+HTTP/1.1 200 OK
+...
+
+*리다이렉션 이해 - 종류
+-영구 리다이렉션 : 특정 리소스의 URI가 영구적으로 이동
+ -예) /members -> /users
+ -예) /event -> new-event
+-일시 리다이렉션 : 일시적인 변경
+ -주문완료 후 주문 내역 화면으로 이동
+ -PRG: Post/Redirect/Get
+-특수 리다이렉션 
+ -결과 대신 캐시를 사용
+
+*영구 리다이렉션
+301, 308
+-리소스의 URI가 영구적으로 이동
+-원래의 URL를 사용X, 검색 엔진 등에서도 변경 유지
+-301 Moved Permanently
+ -리다이렉트시 요청 메서드가 GET으로 변하고, 본문이 제거될 수 있음(MAY)
+-308 Permanent Redirect
+ -301과 기능은 같음
+ -리다이렉트시 요청 메서드와 본문 유지(처음 POST를 보내면 리다이렉트도 POST)
+ 
+#3xx - 리다이렉션2
+*일시적인 리다이렉션
+302, 307, 303
+-리소스의 URI가 일시적으로 변경
+-따라서 검색 엔진 등에서 URL을 변경하면 안됨
+-302 Found
+ -리다이렉트시 요청 메서드가 GET으로 변하고, 본문이 제거될 수 있음(MAY)
+-307 Temporary Redirect
+ -302와 기능은 같음
+ -리다이렉트시 요청 메서드와 본문 유지(요청 메서드를 변경하면 안된다. MUST NOT)
+-303 See Other
+ -302와 기능은 같음
+ -리다이렉트시 요청 메서드가 GET으로 변경
+
+*PRG: Post/Redirect/Get
+일시적인 리다이렉션 - 예시
+(?)POST로 주문후에 웹 브라우저를 새로고침하면? -> 새로고침은 다시 요청 -> 중복 주문이 될 수 있다.
+-POST로 주문후에 웹 브라우저를 새로고침으로 인한 중복 주문 방지
+-POST로 주문후에 주문 결과 화면을 GET 메서드로 리다이렉트
+-새로고침해도 결과 화면을 GET으로 조회
+-중복 주문 대신에 결과 화면만 GET으로 다시 요청
+
+-PRG 이후 리다이렉트
+ -URL이 이미 POST -> GET으로 리다이렉트 됨
+ -새로고침 해도 GET으로 결과 화면만 조회
+
+*그래서 뭘 써야 하나요?
+302, 307, 303
+*잠깐 정리
+ -302 Found -> GET으로 변할 수 있음
+ -307 Temporary Redirect -> 메서드가 변하면 안됨
+ -303 See Other -> 메서드가 GET으로 변경
+*역사
+ -처음 302 스펙의 의도는 HTTP 메서드를 유지하는것
+ -그런데 웹 브라우저들이 대부분 GET으로 바꾸어버림(일부는 다르게 동작)
+ -그래서 모호한 302를 대신하는 명확한 307, 303이 등장함 (301 대응으로 308도 등장)
+*현실
+ -307, 303을 권장하지만 현실적으로 이미 많은 애플리케이션 라이브러리들이 302를 기본값으로 사용
+ -자동 리다이렉션시에 GET으로 변해도 되면 그냥 302를 사용해도 큰 문제 없음
+
+*기타 리다이렉션
+300 304
+-300 Multiple Choices : 안쓴다.
+-304 Not Modufied
+ -캐시를 목적으로 사용
+ -클라이언트에게 리소스가 수정되지 않았음을 알려준다. 따라서 클라이언트는 로컬PC에 저장된 캐시를 재사용한다. (캐시로 리다이렉트 한다.)
+ -304 응답은 응답에 메시지 바디를 포함하면 안된다. (로컬 캐시를 사용해야 하므로)
+ -조건부 GET, HEAD 요청시 사용
+
+#4xx - 클라이언트 오류, 5xx - 서버 오류
+*4xx (Client Error)
+클라이언트 오류
+-클라이언트의 요청에 잘못된 문법등으로 서버가 요청을 수행할 수 없음
+-오류의 원인이 클라이언트에 있음
+-중요! 클라이언트가 이미 잘못된 요청, 데이터를 보내고있기 때문에, 똑같은 재시도가 실패함
+
+*400 Bad Request
+클라이언트가 잘못된 요청을 해서 서버가 요청을 처리할 수 없음
+-요청 구문, 메시지 등등 오류
+-클라이언트는 요청 내용을 다시 검토하고, 보내야함
+-예) 요청 파라미터가 잘못되거나, API 스펙이 맞지  않을 때
+
+*401 Unauthorized
+클라이언트가 해당 리소스에 대한 인증이 필요함
+-인증(Authentication) 되지 않음
+-401 오류 발생시 응답에 WWW-Authenticate 헤더와 함게 인증 방법을 설명
+-참고
+ -인증(Authentication): 본인이 누구인지 확인, (로그인)
+ -인가(Authorization): 권한부여 (ADMIN 권한처럼 특정 리소스에 접근할 수 있는 권한, 인증이 있어야 인가가 있음)
+ -오류 메세지가 Unauthorized이지만 인증 되지 않음(이름이 아쉬움)
+
+*403 Forbidden
+서버가 요청을 이해했지만 승인을 거부함
+-주로 인증 자격 증명은 있지만, 접근 권한이 불충분한 경우
+-예)어드민 등급이 아닌 사용자가 로그인은 했지만, 어드민 등급의 리소스에 접근하는 경우
+
+*404 Not Found
+요청 리소스를 찾을 수 없음
+-요청 리소스가 서버에 없음
+-또는 클라이언트가 권한이 부족한 리소스에 접근할 때 해당 리소스를 숨기고 싶을 때
+
+*5xx (Server Error)
+서버 오류
+-서버 문제로 오류 발생
+-서버에 문제가 있기 때문에 재시도하면 성공할 수도 있음(복구가 되거나 등등)
+
+*500 Internal Server Error
+서버 문제로 오류 발생 애매하면 500 오류
+-서버 내부 문제로 오류 발생
+-애매하면 500 오류
+
+*503 Service Unvailable
+서비스 이용 불가
+-서버가 일시적인 과부하 또는 예정된 작으로 잠시 요청을 처리할 수 없음
+-Retry-After 헤더 필드로 얼마 뒤에 복구되는지 보낼 수도 있음
+
+#6. HTTP 헤더1 - 일반 헤더
+#HTTP 헤더 개요
+*HTTP 헤더
+용도
+-HTTP 전송에 필요한 모든 부가정보
+-예) 메시지 바디의 내용, 메시지 바디의 크기, 압축, 인증, 요청 클라이언트, 서버 정보, 캐시 관리 정보...
+-표준 헤더가 너무 많음
+-필요시 임의의 헤더 추가 가능
+ -helloworld: hihi
+
+*HTTP 헤더
+분류 - RFC2616(과거)
+-헤더 분류
+ -General 헤더: 메시지 전체에 적용되는 정보, 예) Connection: close
+ -Request 헤더: 요청 정보, 예) User-Agent: Mozilla/5.0 (Macintosh; ..)
+ -Response 헤더: 응답 정보, 예): Server: Apache
+ -Entity 헤더: 엔티티 바디 정보, 예) Content-Type: text/html, Content-Length: 3423
+*HTTP BODY
+messsage body - RFC2616(과거)
+-메시지 본문은 엔티티 본문을 전달하는데 사용
+-엔티티 본문은 요청이나 응답에서 전달할 실제 데이터
+-엔티티 헤더는 엔티티 본문의 데이터를 해석할 수 있는 정보 제공
+ -데이터 유형(html, json), 데이터 길이, 압축 정보 등등
+
+*HTTP 표준
+1999년 RFC2616 <- 폐기됨
+2015년 RFC7230~7235
+
+*RFC723x 변화
+-엔티티(Entuty) -> 표현(Representation)
+-Representation = representation + Representation Data
+-표현 = 표현 메타데이터 + 표현 데이터
+
+*HTTP BODY
+messsage body - RFC7230(최신)
+-메시지 본문(messsage body)을 통해 표현 데이터 전달
+-메시지 본문 = 페이로드(payload)
+-표현은 요청이나 응답에서 전달할 실제 데이터
+-표현 헤더는 표현 데이터를 해석할 수 있는 정보 제공
+ -데이터 유형(html, json), 데이터 길이, 압축 정보 등등
+-참고: 표현 헤더는 표현 메타데이터와, 페이로드 메시지를 구분해야 하지만, 이렇게하면 복잡해져서 생략
+
+#표현
+-Content-Type:표현 데이터의 형식
+-Content-Encoding: 표현 데이터의 압축 방식
+-Content-Language: 표현 데이터의 자연 언어
+-Content-Length: 표현 데이터의 길이
+
+-표현 헤더는 전송, 응답 둘다 사용
+
+*Content-Type
+표현 데이터의 형식 설명
+-미디어 타입, 문자 인코딩
+ -예)
+  -text/html; charset=utf-8
+  -application/json
+  -image/png
+
+*Content-Encoding
+표현 데이터 인코딩
+-표현 데이터를 압축하기 위해 사용
+-데이터를 전달하는 곳에서 압축 후 인코딩 헤더 추가
+-데이터를 읽는 쪽에서 인코딩 헤더의 정보로 압축 해제
+-예)
+ -gzip
+ -deflate
+ -identity (압축안한다)
+
+*Content-Language
+표현 데이터의 자연 언어
+-표현 데이터의 자연 언어를 표현
+-예)
+ -ko
+ -en
+ -en-US
+
+*Content-Length
+표현 데이터의 길이
+-바이트 단위
+-Transfer-Encoding(전송 코딩)을 사용하면 Content-Length를 사용하면 안됨
+
+#콘텐츠 협상
+*협상(콘텐츠 네고시에이션)
+클라이언트가 선호하는 표현 요청
+-Accept: 클라이언트가 선호하는 미디어 타입 전달
+-Accept-Charset: 클라이언트가 선호하는 문자 인코딩
+-Accept-Encoding: 클라이언트가 선호하는 압축 인코딩
+-Accept-Language: 클라이언트가 선호하는 자연 언어
+-협상 헤더는 요청시에만 사용
+
+*협상과 우선순위1
+Quality Values(q)
+-Quality Values(q) 값 사용
+-0~1, 클수록 높은 우선순위
+-생략하면 1
+-Accept-Language: ko-KR,ko;q=0.9,en-US;q=0.8;en;q=0.7
+ 1.ko-KR;q=1 (q생략)
+ 2.ko;q=0.9
+ 3.en-US;q=0.8
+ 4.en;q=0.7
+
+*협상과 우선순위2
+Quality Values(q)
+-구체적인 것이 우선한다.
+-Accept: text/*, text/plain, text/plain;format=flowed, */*
+ 1. text/plain;format=flowed
+ 2. text/plain
+ 3. text/*
+ 4. */*
+
+*협상과 우선순위3
+-구체적인 것을 기준으로 미디어 타입을 맞춘다.
+-Accept: text/*;q=0.3, text/html;q=0.7, text/html;level=1,
+         text/html;level=2;q=0.4, */*;q=0.5 
+
+#전송 방식
+*전송 방식 설명
+-단순 전송
+-압축 전송
+-분할 전송
+-범위 전송
+
+*단순 전송 : Content-Lenght
+-응답할 때 메시지 바디에 대한 Content-Lenght를 지정하는 것. 컨텐트에 대한 길이를 알 수 있을 때 쓰는것
+-예) Content-Lenght: 3423
+*압축 전송 : Content-Encoding
+-압축해서 보낼 수 있음. 뭘로 압축되어있는지 정보를 넣어야함.
+-예) Content-Encoding: gzip 
+*분할 전송 : Transfer-Encoding
+-분할해서 전송할 수 있음.
+-예) Transfer-Encoding: chunked
+*범위 전송 : Range, Content-Range 
+-범위를 지정해서 요청할 수 있음. 
+-예) Content-Range: bytes 1001-2000 / 2000
+
+#일반 정보
+*From
+유저 에이전트의 이메일 정보
+-일반적으로 잘 사용되지 않음
+-검색 엔진 같은 곳에서, 주로 사용
+-요청에서 사용
+
+*Referer
+이전 웹 페이지 주소
+-현재 요청된 페이지의 이전 웹 페이지 주소
+-A -> B로 이동하는 경우 B를 요청할 때 Referer: A를 포함해서 요청
+-Referer를 사용해서 유입 경로 분석 가능
+-요청에서 사용
+-참고: Referer는 단어 referrer의 오타
+
+*User-Agent
+유저 에이전트 애플리케이션 정보
+-user-agent: Mozila/5.0 (Macintosh; IntelMac OS X 10_15_7) AppleWebkit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.183 Safari/537.36
+-클라이언트의 애플리케이션 정보(웹 브라우저 정보, 등등)
+-통계 정보
+-어떤 종류의 브라우저에서 장애가 발생하는지 파악 가능
+-요청에서 사용
+
+*Server
+요청을 처리하는 ORIGIN 서버의 소프트웨어 정보
+-Server: Apache/2.2.22 (Debian)
+-server: nginx
+-응답에서 사용
+
+*Date
+메시지가 발생한 날짜와 시간
+-Date: Tue, 15 Nov 1994 08:12:31 GMT
+-응답에서 사용
+
+#특별한 정보
+*Host
+요청한 호스트 정보(도메인)
+-요청에서 사용
+-필수
+-하나의 서버가 여러 도메인을 처리해야 할 때
+-하나의 IP 주소에 여러 도메인이 적용되어 있을 때
+
+*Location
+페이지 리다이렉션
+-웹 브라우저는 3xx 응답의 결과에 Location 헤더가 있으면, Location 위치로 자동 이동(리다이렉트)
+-응답코드 3xx에서 설면
+-201 (Created): Location 값은 요청에 의해 생성된 리소스 URI
+-3xx (Redirection): Location 값은 요청을 자동으로 리다이렉션 하기 위한 대상 리소스를 가리킴
+
+*Allow
+허용 가능한 HTTP 메서드
+-405 (Method Not Allowed)에서 응답에 포함해야함
+-Allow: GET, HEAD, PUT
+
+*Retry-After
+유저 에이전트가 다음 요청을 하기까지 기다려ㅑ야 하는 시간
+-503 (Service Unvailable): 서비스가 언제까지 불능인지 알려줄 수 있음
+-Retry-After: Fri, 31 Dec 1999 23:59:59 GMT (날짜 표기)
+-Retry-After: 120 (초단위 표기)
+
+#인증
+*Authorization
+클라이언트 인증 정보를 서버에 전달
+-Authorization: Basic xxxxxxxxxxxxx
+
+*WWW-Authenticate
+리소스 접근 시 필요한 인증 방법 정의
+-401 Unauthorized 응답과 함께 사용
+-WWW-Authenticate: Newauth realm="apps", type=1, title="Login to \"apps\"", Basic realm="simple"
+
+#쿠키
+*Set-Cookie: 서버에서 클라이언트로 쿠키 전달(응답)
+*Cookie: 클라이언트가 서버에서 받은 쿠키를 저장하고, HTTP 요청시 바로 전달
+
+*Stateless
+-HTTP는 무상태(Stateless) 프로토콜이다.
+-클라이언트와 서버가 요청과 응답을 주고 받으면 연결이 끊어진다.
+-클라이언트가 다시 요청하면 서버는 이전 요청을 기억하지 못한다.
+-클라이언트와 서버는 서로 상태를 유지하지 않는다.
+
+*쿠키 미사용
+대안 - 모든 요청에 링크에 사용자 정보 포함?
+
+*모든 요청에 정보를 넘기는 문제
+-모든 요청에 사용자 정보가 포함되도록 개발 해야함
+-브라우저를 완전히 종료하고 다시 열면?
+
+*쿠키
+모든 요청에 쿠키 정보 자동 포함
+
+*쿠키
+-예) set-cookie: sessionId=abcde1234; expires=Sat, 26-Dec-2020 00:00:00 GMT; path=/; domain=google.com; Secure
+-사용처
+ -사용자 로그인 세션 관리
+ -광고 정보 트래킹
+-쿠키 정보는 항상 서버에 전송됨
+ -네트워크 트래픽 추가 유발
+ -최소한의 정보만 사영(세션 id, 인증 토큰) 
+ -서버에 전송하지 않고, 웹 브라우저 내부에 데이터를 저장하고 싶으면 웹 스토리지(localStorage, sessionStorage) 참고
+-주의!
+ -보안에 민감한 데이터는 저장하면 안됨(주민번호, 신용카드 번호 등등) 
+
+*쿠키 - 생명주기
+Expires, max-age
+-Set-Cookie: expires=Sat, 26-Dec-2020 04:39:21 GMT
+ -만료일이 되면 쿠키 삭제
+-Set-Cookie: max-age=3600 (3600초)
+ -0이나 음수를 지정하면 쿠키 삭제
+-세션 쿠키: 만료 날짜를 생략하면 브라우저 종료시 까지만 유지
+-영속 쿠키: 만료 날짜를 입력하면 해당 날짜까지 유지
+
+*쿠키 - 도메인
+Domain
+-예) domain=example.org
+-명시: 명시한 문서 기준 도메인 + 서브 도메인 포함
+ -domain=example.org를 지정해서 쿠키 생성
+  -example.org는 물론이고
+  -dev.example.org도 쿠키 접근
+-생략: 현재 문서 기준 도메인만 적용
+ -example.org에서 쿠키를 생성하고 domain 지정을 생략
+  -example.org에서만 쿠키 접근
+  -dev.example.org는 쿠키 미접근
+
+*쿠키 - 경로
+Path
+-예) path=/home
+-이 경로를 포함한 하위 경로 페이지만 쿠키 접근
+-일반적으로 path=/ 루트로 지정
+-예)
+ -path=/home 지정
+ -/home -> 가능
+ -/home/level1 -> 가능
+ -/home/level1/level2 -> 가능
+ -/hello -> 불가능
+
+*쿠키 - 보안
+Secure, HttpOnly, Samsite
+-Secure
+ -쿠키는 원래 http,https를 구분하지 않고 전송
+ -Secure를 적용하면 https인 경우에만 전송
+-HttpOnly
+ -XSS 공격 방지
+ -자바스크립트에서 접근 불가(document.cookie)
+ -HTTP 전송에만 사용
+-Samsite
+ -XSRF 공격 방지
+ -요청 도메인과 쿠키에 설정된 도메인이 같은 경우만 쿠키 전송
